@@ -4,10 +4,15 @@ project(webrtc_test)
 
 set(CMAKE_CXX_STANDARD 20)
 
-add_executable(webrtc_test send_recv.cpp)
+#add_executable(webrtc_test send_recv.cpp)
 #add_executable(webrtc_test send_only.cpp)
 #add_executable(webrtc_test send_only_unidirectional.cpp)
+add_executable(webrtc_test send_only_uni_opencv_mod.cpp)
+#add_executable(wetrtc_test data_probes_test_bgra.cpp)
 
+find_package(OpenCV REQUIRED)
+include_directories(${OpenCV_INCLUDE_DIRS})
+target_link_libraries(webrtc_test ${OpenCV_LIBS})
 
 find_package(PkgConfig)
 if (PKG_CONFIG_FOUND)

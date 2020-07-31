@@ -21,6 +21,7 @@
 #define RTP_PAYLOAD_TYPE "96"
 #define SOUP_HTTP_PORT 57778
 #define STUN_SERVER "stun.l.google.com:19302"
+//#define STUN_SERVER "127.0.0.1:3478"
 
 typedef struct _ReceiverEntry ReceiverEntry;
 
@@ -180,9 +181,8 @@ create_receiver_entry (SoupWebsocketConnection * connection)
 
     error = NULL;
     /**/receiver_entry->pipeline =
-            gst_parse_launch ("webrtcbin name=webrtcbin stun-server=stun://"
-                              STUN_SERVER " "
-                              "v4l2src "
+            gst_parse_launch ("webrtcbin name=webrtcbin  stun-server=stun://" STUN_SERVER " "
+                              "v4l2src device=/dev/video0 "
                               "! videorate "
                               "! video/x-raw,width=640,height=360,framerate=15/1 "
                               "! videoconvert "

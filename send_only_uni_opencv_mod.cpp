@@ -247,7 +247,7 @@ create_receiver_entry (SoupWebsocketConnection * connection)
                                   "! video/x-raw,width=" STR_WIDTH ",height=" STR_HEIGHT ",framerate=" STR_FRAMERATE " "
                                   "! videoconvert "
                                   "! video/x-raw,format=BGRA "
-                                  "! appsink caps=\"video/x-raw,width=" STR_WIDTH ",height=" STR_HEIGHT ",framerate=" STR_FRAMERATE ",format=BGRA\" name=apt_video_sink",
+                                  "! appsink caps=\"video/x-raw,width=" STR_WIDTH ",height=" STR_HEIGHT ",framerate=" STR_FRAMERATE ",format=BGRA\" name=app_video_sink",
                                   &error);
     if (error != NULL) {
         g_error ("Could not create WebRTC pipeline: %s\n", error->message);
@@ -255,7 +255,7 @@ create_receiver_entry (SoupWebsocketConnection * connection)
         goto cleanup;
     }
     pipeline_1 = gst_parse_launch("webrtcbin name=webrtcbin  stun-server=stun://" STUN_SERVER " "
-                                  "appsrc name=apt_video_src caps=\"video/x-raw,width=" STR_WIDTH ",height=" STR_HEIGHT ",framerate=" STR_FRAMERATE ",format=BGRA\" "
+                                  "appsrc name=app_video_src caps=\"video/x-raw,width=" STR_WIDTH ",height=" STR_HEIGHT ",framerate=" STR_FRAMERATE ",format=BGRA\" "
                                   "! videoconvert "
                                   "! queue max-size-buffers=1 "
                                   "! x264enc speed-preset=ultrafast tune=zerolatency key-int-max=15 "
@@ -273,6 +273,30 @@ create_receiver_entry (SoupWebsocketConnection * connection)
     }
     receiver_entry->pipeline_0 = pipeline_0;
     receiver_entry->pipeline = pipeline_1;
+
+    GstElement *appsink;
+    appsink = gst_bin_get_by_name(GST_BIN(receiver_entry->pipeline_0), "app_video_sink");
+    g_object_set(G_OBJECT(appsink), "emit-signals", TRUE, "sync", FALSE, NULL);
+
+    GstStateChangeReturn ret;
+    ret = gst_element_set_state(receiver_entry->pipeline_0, GST_STATE_PAUSED);
+    switch (ret) {
+        case GST_STATE_CHANGE_FAILURE:
+            g_print("\nCannot start playing a video stream\n");
+            goto cleanup;
+        case GST_STATE_CHANGE_NO_PREROLL:
+            g_print("\nCannot play from a real time source video.\n");
+            //goto cleanup;
+            break;
+        default:
+            break;
+    }
+
+    GstElement *appsrc;
+    appsrc = gst_bin_get_by_name(GST_BIN(receiver_entry->pipeline), "app_video_src");
+    g_object_set(G_OBJECT(appsrc), "stream-type", 0,
+                 "format", GST_FORMAT_TIME, NULL);
+
 
     //here i should connect appsink and appsrc
 
@@ -323,6 +347,9 @@ create_receiver_entry (SoupWebsocketConnection * connection)
     return receiver_entry;
 
     cleanup:
+    //here is my message
+    std::cout << "Smt going wrong...";
+    //end of my message
     destroy_receiver_entry ((gpointer) receiver_entry);
     return NULL;
 }
